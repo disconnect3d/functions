@@ -1,18 +1,20 @@
 # functions
 
-Python repository containing parsed standard C library function and argument information
+Python repository containing parsed standard C library function and argument information.
+See `Example usage` section to see if it may help you.
 
 ## How do I use it?
 
-I already did the heavy lifting for you, just look at [functions.py][1].
+I already built it for you, just look at [functions.py](functions.py).
 
-If you want to build it yourself, just clone the repo and `make clean all`.
+If you want to build `functions.py` yourself, just clone the repo and fire `make clean all`.
 
-Things will probably blow up, which is why I included a `Dockerfile`.  You can build with `make release`.
+Things will probably blow up, which is why I included a `Dockerfile`.
+You can build `functions.py` with a simple `make release`.
 
-[1]: https://github.com/zachriggle/functions/blob/master/functions.py
+Note that it will build a docker image `functions` on your machine using the [Dockerfile](docker/Dockerfile) present in repo that is based on [pwntools/pwntools](https://hub.docker.com/r/pwntools/pwntools) docker image.
 
-## Example
+## Example usage
 
 ```
 >>> from functions import functions
@@ -28,8 +30,14 @@ void
 1
 ```
 
-## Notes
+## Notes aka how it works
 
-Basically we just pass everything to `PyCParser` and extract all functions and arguments, as well as their types.
+We keep a list of includes in [source.c](source.c). This file is then passed to GCC's preprocessor (`gcc -E` flag) so we get a `source.o` file that contains the content of all included headers (it is not really an object file).
+
+We also keep a list of missing functions in `missing.txt`. Those functions are not present in the listed headers. We fetch their declarations from `man` pages using `missing.sh` and create `missing.h` header.
+
+Later, we concatenate both files: `source.o` and `missing.h` into `preprocesed.h` file.
+
+Finally, we just pass everything (`preprocessed.h` file) to [PyCParser](https://github.com/eliben/pycparser) and extract all functions and arguments, as well as their types.
 
 Some syscalls are not in any standard C headers, so these have been added to `missing.txt`.  The signatures are manually (pun!) extracted from the man pages.
